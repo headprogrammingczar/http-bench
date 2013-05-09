@@ -10,8 +10,11 @@ import Text.Printf
 import System.Exit
 import System.Environment
 import Control.Exception as E
+import Debug.Trace
 
 data Stats = Stats {hits :: Int, prevHits :: Int} deriving (Show)
+
+data Interval = Interval {} deriving (Show)
 
 interval = 10 * 1000 * 1000 -- ten seconds
 
@@ -78,7 +81,10 @@ reset s = s {hits = 0, prevHits = hits s}
 
 go :: String -> MVar Stats -> IO ()
 go url stats = forever $ do
-  simpleHTTP (getRequest url)
+  result <- simpleHTTP (getRequest url)
+  let success = case result of
+                  (Right response) | rspCode response == (2, 0, 0) -> True
+                  _ -> False
   modifyMVar_ stats $ \s -> return s {hits = hits s + 1}
 
 usage = "\n\
